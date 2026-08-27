@@ -10210,7 +10210,7 @@ describe("copy mode", () => {
     expect(ctx.copyMoves).toEqual([])
   })
 
-  test("n and N repeat copy search", () => {
+  test("n and N repeat copy search and center the cursor", () => {
     const ctx = createHandler("abc", { mode: "copy" })
 
     const next = createEvent("n")
@@ -10223,6 +10223,7 @@ describe("copy mode", () => {
 
     expect(ctx.copySearchNexts()).toBe(1)
     expect(ctx.copySearchPreviouses()).toBe(1)
+    expect(ctx.copyScrollCalls).toEqual(["center", "center"])
     expect(ctx.state.mode()).toBe("copy")
   })
 
@@ -10665,7 +10666,7 @@ describe("copy mode", () => {
     expect(cm.state().col).toBe(7)
   })
 
-  test("y yanks copy selection and exits copy mode", () => {
+  test("y yanks copy selection and stays in copy mode", () => {
     const ctx = createHandler("abc", { mode: "copy", copy: { text: "picked text", isVisual: true } })
 
     const evt = createEvent("y")
@@ -10673,12 +10674,13 @@ describe("copy mode", () => {
     expect(evt.prevented()).toBe(true)
     expect(ctx.copyYanks()).toBe(1)
     expect(ctx.copyCopies()).toBe(0)
-    expect(ctx.copyExitPreserveScrolls()).toBe(1)
+    expect(ctx.copyExitVisuals()).toBe(1)
+    expect(ctx.copyExitPreserveScrolls()).toBe(0)
     expect(ctx.state.register()).toEqual({ text: "picked text", linewise: false })
-    expect(ctx.state.mode()).toBe("normal")
+    expect(ctx.state.mode()).toBe("copy")
   })
 
-  test("yy yanks current line and exits copy mode", async () => {
+  test("yy yanks current line and stays in copy mode", () => {
     const ctx = createHandler("abc", { mode: "copy", copy: { text: "picked line" } })
 
     const first = createEvent("y")
@@ -10696,9 +10698,8 @@ describe("copy mode", () => {
     expect(ctx.state.register()).toEqual({ text: "picked line", linewise: false })
     expect(ctx.state.pending()).toBe("")
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    expect(ctx.copyExitPreserveScrolls()).toBe(1)
-    expect(ctx.state.mode()).toBe("normal")
+    expect(ctx.copyExitPreserveScrolls()).toBe(0)
+    expect(ctx.state.mode()).toBe("copy")
   })
 
   test("Y yanks current line and exits copy mode to bottom", async () => {
@@ -11135,6 +11136,7 @@ describe("copy mode", () => {
       expect(evt.prevented()).toBe(true)
       expect(ctx.scrollCalls.at(-1)).toBe(action)
     }
+    expect(ctx.copyScrollCalls).toEqual(["center", "center"])
   })
 
   test("copy mode ignores printable keys without side effects", () => {

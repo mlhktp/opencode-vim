@@ -1850,18 +1850,13 @@ export function createVimHandler(input: {
     if (key === "y" && !event.shift && !hasModifier(event)) {
       if (input.copyIsVisual?.()) {
         input.copyYank?.()
-        input.copyExitPreserveScroll?.()
-        input.state.setMode("normal")
+        input.copyExitVisual?.()
         event.preventDefault()
         return true
       }
       if (input.state.pending() === "y") {
         input.state.clearPending()
         input.copyYankLine?.()
-        setTimeout(() => {
-          input.copyExitPreserveScroll?.()
-          input.state.setMode("normal")
-        }, 70)
         event.preventDefault()
         return true
       }
@@ -1958,6 +1953,10 @@ export function createVimHandler(input: {
     if (scroll) {
       clearCopyPending()
       input.scroll(scroll)
+      if (scroll === "half-down" || scroll === "half-up") {
+        input.copyJump?.("middle")
+        input.copyScroll?.("center")
+      }
       event.preventDefault()
       return true
     }
@@ -1990,14 +1989,14 @@ export function createVimHandler(input: {
 
     if (pending === "" && key === "n" && !event.shift) {
       clearCopyPending()
-      input.copySearchNext?.()
+      if (input.copySearchNext?.()) input.copyScroll?.("center")
       event.preventDefault()
       return true
     }
 
     if (pending === "" && isShifted(event, "n")) {
       clearCopyPending()
-      input.copySearchPrevious?.()
+      if (input.copySearchPrevious?.()) input.copyScroll?.("center")
       event.preventDefault()
       return true
     }
